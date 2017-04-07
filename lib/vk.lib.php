@@ -1,5 +1,34 @@
 <?php
 
+// Функция отправки сообщения юзеру
+function send( $message , $uid, $chat_id='user', $attache='', $dop_str='' ) {
+    global $mtoken;
+	usleep(333333);
+	// Формируем начало сообщения 
+	$url = 'access_token='.$mtoken.'&message='.urlencode($message);
+	if($chat_id == 'chat') $url .= '&chat_id='.$uid;
+	else $url .= '&user_id='.$uid;
+		
+	if(!$attache) $url .= $dop_str; 
+	else $url .= '&attachment='.$attache.''.$dop_str; 
+	
+    $html = gotourl('https://api.vk.com/method/messages.send','','','',$url); //",'','','',"
+	//file_get_contents('https://api.vk.com/method/messages.send?'.$url); //,'','','', $url
+	//file_put_contents(dirname(__FILE__).'/../log.txt', '|Запрос:https://api.vk.com/method/messages.send?'.$url.' найдены данные:'.$html."\r\n");
+	// проверяем на капчу
+	testCapcha($html, 'send', $uid, $message, $chat_id, $attache, '', '', '', $mtoken);
+	return $html;
+}
+
+function get( $count, $ttoken='', $dop_str='' ) {
+    global $mtoken;
+	if($ttoken) $mtoken = $ttoken;
+	$html = gotourl('https://api.vk.com/method/messages.get','','','','access_token='.$mtoken.'&count='.$count.''.$dop_str);
+	//file_put_contents(dirname(__FILE__).'/../log.txt', '|Запрос:https://api.vk.com/method/messages.get?'.$url.' найдены данные:'.$html."\r\n");
+	testCapcha($html, 'get', $count, $ttoken, '', '', '', '', '', $mtoken);
+	return $html;
+}
+
 // Получаем записи сообщества
 function getWall($owner_id='', $domain='', $count=1, $offset='', $filter='', $extended=0, $fields='', $dop_str='') {
     global $mtoken;
@@ -32,6 +61,26 @@ function getWallComments($owner_id='', $post_id='', $offset=0, $count=100, $sort
 	return $html;
 }
 
+// Получаем темы обсуждений
+function getBoardTopics( $group_id='', $topic_ids='', $count=100, $offset=0, $order=1, $extended=0, $preview=0, $preview_length=90, $dop_str='') {
+    global $mtoken ;
+	$html = gotourl('https://api.vk.com/method/board.getTopics','','','','access_token='.$mtoken.'&group_id='.$group_id.'&topic_ids='.$topic_ids.'&count='.$count.'&offset='.$offset.'&order='.$order.'&extended='.$extended.'&preview='.$preview.'&preview_length='.$preview_length.''.$dop_str);
+	//file_put_contents(dirname(__FILE__).'/../log1.txt', 'Запрос:https://api.vk.com/method/groups.getById?access_token='.$token.'&group_ids='.$group_ids.'&group_id='.$group_id.'&fields='.$fields.''.$dop_str.' найдены данные:'.$html."\r\n", FILE_APPEND);
+	// проверяем на капчу
+	testCapcha($html, 'getBoardTopics', $group_id, $topic_ids, $count, $offset, $order, $extended, $preview, $mtoken); 
+	return $html;
+}
+
+// Получаем сообщения темы обсуждений
+function getBoardComments( $group_id='', $topic_id='', $count=100, $offset=0, $extended=1, $sort='desc', $start_comment_id='', $need_likes=0, $dop_str='') {
+    global $mtoken ;
+	$html = gotourl('https://api.vk.com/method/board.getComments','','','','access_token='.$mtoken.'&group_id='.$group_id.'&topic_id='.$topic_id.'&count='.$count.'&offset='.$offset.'&need_likes='.$need_likes.'&extended='.$extended.'&sort='.$sort.''.$dop_str);
+	//file_put_contents(dirname(__FILE__).'/../log1.txt', 'Запрос:https://api.vk.com/method/groups.getById?access_token='.$token.'&group_ids='.$group_ids.'&group_id='.$group_id.'&fields='.$fields.''.$dop_str.' найдены данные:'.$html."\r\n", FILE_APPEND);
+	// проверяем на капчу
+	testCapcha($html, 'getBoardComments', $group_id, $topic_id, $count, $offset, $start_comment_id, $extended, $sort, $mtoken); 
+	return $html;
+}
+
 // Получение группы по ID
 function getGroupsById( $group_ids='', $group_id='', $fields='contacts', $dop_str='') {
     global $mtoken ;
@@ -39,6 +88,26 @@ function getGroupsById( $group_ids='', $group_id='', $fields='contacts', $dop_st
 	//file_put_contents(dirname(__FILE__).'/../log1.txt', 'Запрос:https://api.vk.com/method/groups.getById?access_token='.$token.'&group_ids='.$group_ids.'&group_id='.$group_id.'&fields='.$fields.''.$dop_str.' найдены данные:'.$html."\r\n", FILE_APPEND);
 	// проверяем на капчу
 	testCapcha($html, 'getGroupsById', $group_ids, $group_id, $fields, '', '', '', '', $mtoken); 
+	return $html;
+}
+
+// Возвращает список товаров в сообществе.
+function getMarket( $owner_id='', $album_id='', $count=200, $offset=0, $extended=0, $dop_str='') {
+    global $mtoken ;
+	$html = gotourl('https://api.vk.com/method/market.get','','','','access_token='.$mtoken.'&owner_id='.$owner_id.'&album_id='.$album_id.'&count='.$count.'&offset='.$offset.'&extended='.$extended.''.$dop_str);
+	//file_put_contents(dirname(__FILE__).'/../log1.txt', 'Запрос:https://api.vk.com/method/groups.getById?access_token='.$token.'&group_ids='.$group_ids.'&group_id='.$group_id.'&fields='.$fields.''.$dop_str.' найдены данные:'.$html."\r\n", FILE_APPEND);
+	// проверяем на капчу
+	testCapcha($html, 'getMarket', $owner_id, $album_id, $count, $offset, $extended, '', '', $mtoken); 
+	return $html;
+}
+
+// Возвращает список комментариев к товару.
+function getMarketComments($owner_id='', $item_id='', $count=100, $offset=0, $extended=1, $sort='desc', $start_comment_id='', $need_likes=0, $fields='', $dop_str='') {
+    global $mtoken ;
+	$html = gotourl('https://api.vk.com/method/market.getComments','','','','access_token='.$mtoken.'&owner_id='.$owner_id.'&item_id='.$item_id.'&count='.$count.'&offset='.$offset.'&need_likes='.$need_likes.'&extended='.$extended.'&sort='.$sort.''.$dop_str);
+	//file_put_contents(dirname(__FILE__).'/../log1.txt', 'Запрос:https://api.vk.com/method/groups.getById?access_token='.$token.'&group_ids='.$group_ids.'&group_id='.$group_id.'&fields='.$fields.''.$dop_str.' найдены данные:'.$html."\r\n", FILE_APPEND);
+	// проверяем на капчу
+	testCapcha($html, 'getMarketComments', $owner_id, $item_id, $count, $offset, $extended, $sort, $fields, $mtoken); 
 	return $html;
 }
 
@@ -101,11 +170,29 @@ function testCapcha($messages, $step, $uid='', $message='', $attache='', $tmp_do
 			unlink(dirname(__FILE__).'/../captcha/'.$capch_jpg);
 			unset($capch_jpg);
 			 switch ($step) {
+            case 'get': 
+			return get($uid, $message, '&captcha_sid=' . $c[1] . '&captcha_key='.$cod);
+			break;
+			case 'send': 
+			return send($message, $uid, $attache, $tmp_dop1, '&captcha_sid=' . $c[1] . '&captcha_key='.$cod);
+			break;
 			case 'getWall': 
 			return getWall($uid, $message, $attache, $tmp_dop1, '', 0, '', '&captcha_sid=' . $c[1] . '&captcha_key='.$cod);
 			break;
 			case 'getWallComments': 
 			return getWallComments($uid, $message, $attache, $tmp_dop1, $tmp_dop2, $tmp_dop3, $tmp_dop4, '&captcha_sid=' . $c[1] . '&captcha_key='.$cod);
+			break;		
+			case 'getBoardTopics': 
+			return getBoardTopics($uid, $message, $attache, $tmp_dop1, $tmp_dop2, $tmp_dop3, $tmp_dop4, '', '&captcha_sid=' . $c[1] . '&captcha_key='.$cod);
+			break;
+			case 'getBoardComments': 
+			return getBoardComments($uid, $message, $attache, $tmp_dop1, $tmp_dop3, $tmp_dop4, $tmp_dop2, '', '&captcha_sid=' . $c[1] . '&captcha_key='.$cod);
+			break;
+			case 'getMarket': 
+			return getMarket($uid, $message, $attache, $tmp_dop1, $tmp_dop2, '&captcha_sid=' . $c[1] . '&captcha_key='.$cod);
+			break;
+			case 'getMarketComments': 
+			return getMarketComments($uid, $message, $attache, $tmp_dop1, '', $tmp_dop2, '', '', $tmp_dop3, '&captcha_sid=' . $c[1] . '&captcha_key='.$cod);
 			break;
 			case 'getAlbums': 
 			return getAlbums($uid, $message, $attache, $tmp_dop1, 0, 0,'&captcha_sid=' . $c[1] . '&captcha_key='.$cod);
